@@ -17,9 +17,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
+load_dotenv()
 from getSignedUrl import getSignedUrl
 
-load_dotenv()
+
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -58,7 +59,37 @@ bucket = os.getenv("BUCKET")
 ##                                                                                                ##
 ####################################################################################################
 
+def generate_image_url(object_key):
+    return s3_client.generate_presigned_url(
+        ClientMethod="get_object",
+        Params={"Bucket": bucket, "Key": object_key},
+        ExpiresIn=3600
+    )
 
+def format_post(item):
+    image_key = item.get("image")
+    return {
+        "user":item.get("user"),
+        "id" : item.get("id"),
+        "title": item.get("title"),
+        "body": item.get("body"),
+        "image": generate_image_url(image_key) if image_key else None,
+        "labels": item.get("label") or None
+    }
+
+def get_posts_by_user(username):
+    user_key = f"USER#{username}"
+    response = table.scan(
+        FilterExpression="#u = :user_val",
+        ExpressionAttributeNames={"#u": "user"},
+        ExpressionAttributeValues={":user_val": user_key},
+    )
+    return response.get("Items", [])
+
+
+def get_all_posts_from_db():
+    response = table.scan()
+    return response.get("Items", [])
 
 
 @app.post("/posts")
@@ -70,9 +101,22 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     logger.info(f"body : {post.body}")
     logger.info(f"user : {authorization}")
 
+    post_id = f"POST#{uuid.uuid4()}"
+    user_key = f"USER#{authorization}" 
+
+    res = table.put_item(
+        Item={
+            "user": user_key,
+            "id": post_id,
+            "title": post.title,
+            "body": post.body,
+        }
+    )
+
 
     # Doit retourner le résultat de la requête la table dynamodb
-    return res
+    return {"user": user_key, "id": post_id, "title": post.title, "body": post.body}
+
 
 @app.get("/posts")
 async def get_all_posts(user: Union[str, None] = None):
@@ -83,10 +127,14 @@ async def get_all_posts(user: Union[str, None] = None):
     """
     if user :
         logger.info(f"Récupération des postes de : {user}")
+        items = get_posts_by_user(user)
     else :
         logger.info("Récupération de tous les postes")
+        items = get_all_posts_from_db()
      # Doit retourner une liste de posts
-    return res[""]
+    res = [format_post(item) for item in items]
+
+    return res
 
     
 @app.delete("/posts/{post_id}")
@@ -94,14 +142,19 @@ async def delete_post(post_id: str, authorization: str | None = Header(default=N
     # Doit retourner le résultat de la requête la table dynamodb
     logger.info(f"post id : {post_id}")
     logger.info(f"user: {authorization}")
+
+    user_key = f"USER#{authorization}"
     # Récupération des infos du poste
-
+    post_infos = table.get_item(Key={"user": user_key, "id": f"POST#{post_id}"})
+    post = post_infos.get("Item")
+    
     # S'il y a une image on la supprime de S3
-
+    if post and post.get("image"):
+        s3_client.delete_object(Bucket=bucket, Key=post["image"])
     # Suppression de la ligne dans la base dynamodb
-
+    res = table.delete_item(Key={"user": user_key, "id": f"POST#{post_id}"})
     # Retourne le résultat de la requête de suppression
-    return item
+    return res
 
 
 

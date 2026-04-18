@@ -2,3 +2,9 @@
 
 openTofu/.terraform
 openTofu/.terraform.lock.hcl
+venv
+.terraform.tfstate.lock.info
+function.zip
+
+openTofu/terraform.tfstate
+openTofu/terraform.tfstate.backup

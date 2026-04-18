@@ -3,10 +3,10 @@
 resource "aws_s3_bucket" "bucket" {
   bucket_prefix = "bucket-projet-bpr"
   force_destroy = true
-   tags = {
-      Name = "My bucket"
-       Environment = "Dev"
-   }
+  tags = {
+    Name        = "My bucket"
+    Environment = "Dev"
+  }
 }
 
 # A décommenter seulement quand le bucket est défini

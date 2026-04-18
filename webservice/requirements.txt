@@ -1,3 +1,3 @@
-python-dotenv
-boto3
-fastapi[all]
+python-dotenv==1.2.2
+boto3==1.42.89
+fastapi[all]==0.135.3

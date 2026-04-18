@@ -6,7 +6,7 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   read_capacity  = 5
   write_capacity = 5
   hash_key       = "user" #id_user 
-  range_key      = "id" #id_publi
+  range_key      = "id"   #id_publi
 
   attribute {
     name = "user"
