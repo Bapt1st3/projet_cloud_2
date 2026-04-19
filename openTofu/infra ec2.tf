@@ -15,14 +15,14 @@ resource "aws_launch_template" "ubuntu_template" {
   image_id      = "ami-0866a3c8686eaeeba"
   instance_type = "t2.micro"
   key_name      = "vockey"
-  iam_instance_profile {
-name = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/LabRole" #<- NE PAS MODIFIER
-  }
+#   iam_instance_profile {
+# name = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/LabRole" #<- NE PAS MODIFIER
+#   }
   
 
-# iam_instance_profile {
-#   name = "LabInstanceProfile"
-# }
+iam_instance_profile {
+  name = "LabInstanceProfile"
+}
 
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
