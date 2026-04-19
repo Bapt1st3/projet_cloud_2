@@ -18,6 +18,7 @@ resource "aws_launch_template" "ubuntu_template" {
   iam_instance_profile {
 name = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/LabRole" #<- NE PAS MODIFIER
   }
+  
 
 # iam_instance_profile {
 #   name = "LabInstanceProfile"
